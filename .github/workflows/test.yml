@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn install
+      env:
+        ETHERSCAN_API_KEY: ${{secrets.ETHERSCAN_API_KEY}}
+        WALLET_PRIV_KEY: ${{secrets.WALLET_PRIV_KEY}}
+        RPC_URL: ${{secrets.RPC_URL}}
+    - run: yarn test
+      env:
+        ETHERSCAN_API_KEY: ${{secrets.ETHERSCAN_API_KEY}}
+        WALLET_PRIV_KEY: ${{secrets.WALLET_PRIV_KEY}}
+        RPC_URL: ${{secrets.RPC_URL}}

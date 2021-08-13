@@ -73,9 +73,9 @@ In order you get started you have to install [NodeJs](https://nodejs.org/en/down
 ### Installation
 
 1. Clone the repo
-2. Run `yarn install`
-3. Copy `.env.sample` file to `.env`
-4. Fill the variables from .env file: `ETHERSCAN_API_KEY`, `WALLET_PRIV_KEY`, `RPC_URL`
+2. Copy `.env.sample` file to `.env`
+3. Fill the variables from .env file: `ETHERSCAN_API_KEY`, `WALLET_PRIV_KEY`, `RPC_URL`
+4. Run `yarn install`
 
 ### Build
 `yarn compile`
