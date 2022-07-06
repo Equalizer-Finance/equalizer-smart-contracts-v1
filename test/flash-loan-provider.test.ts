@@ -5,7 +5,13 @@ const { deployContract } = waffle;
 import { Wallet } from 'ethers';
 import BigNumber from 'bignumber.js';
 
-import { VaultFactory, FlashLoanProvider, ERC20TokenMock, FlashBorrowerMock } from '../typechain';
+import {
+  VaultFactory,
+  FlashLoanProvider,
+  ERC20TokenMock,
+  FlashBorrowerMock,
+  FlashBorrowerMockWithExploit
+} from '../typechain';
 
 import VaultFactoryArtifact from '../artifacts/contracts/VaultFactory.sol/VaultFactory.json';
 import FlashLoanProviderArtifact from '../artifacts/contracts/FlashLoanProvider.sol/FlashLoanProvider.json';
@@ -25,6 +31,7 @@ describe('FlashLoanProvider', async () => {
   const DEPOSIT_VALUE = new BigNumber(50).multipliedBy(usdcTokenBnDecimals).toString();
 
   let flashBorrower = null;
+  let flashBorrowerExploiter = null;
 
   before(async () => {
     [owner, addr1] = await ethers.getSigners();
@@ -46,6 +53,9 @@ describe('FlashLoanProvider', async () => {
       flashLoanProvider.address,
       vaultFactory.address,
     ])) as FlashBorrowerMock;
+
+    flashBorrowerExploiter = (await (await ethers.getContractFactory('FlashBorrowerMockWithExploit')).deploy(flashLoanProvider.address,
+      vaultFactory.address)) as FlashBorrowerMockWithExploit;
 
     await vaultFactory.initialize(flashLoanProvider.address, usdcToken.address);
     await vaultFactory.functions['createVault(address,uint256)'](
@@ -130,4 +140,22 @@ describe('FlashLoanProvider', async () => {
       "Transaction reverted: function selector was not recognized and there's no fallback function"
     );
   });
+
+  it ('should fail to exploit the vault', async () => {
+    await usdcToken.approve(vault.address, ethers.constants.MaxUint256);
+    await vault.provideLiquidity(DEPOSIT_VALUE);
+    let maxLoan = await flashLoanProvider.maxFlashLoan(usdcToken.address);
+    let flAmount = maxLoan * 9 / 10;
+    await usdcToken.transfer(flashBorrowerExploiter.address, maxLoan);
+
+
+
+    await expect(flashBorrowerExploiter.flashLoan(
+      usdcToken.address,
+      flAmount,
+      ethers.utils.randomBytes(3)
+    )).to.be.revertedWith('ONLY_NOT_PAUSED');
+  })
+
+
 });
