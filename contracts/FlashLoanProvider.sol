@@ -84,6 +84,7 @@ contract FlashLoanProvider is IERC3156FlashLender {
         );
         uint256 fee = _flashFee(token, amount);
         require(vault.transferToAccount(address(receiver), amount), 'FLASH_LENDER_TRANSFER_FAILED');
+        vault.lockVault();
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == CALLBACK_SUCCESS,
             'FLASH_LENDER_CALLBACK_FAILED'
@@ -97,6 +98,7 @@ contract FlashLoanProvider is IERC3156FlashLender {
             'FLASH_LENDER_REPAY_FAILED'
         );
         uint256 treasuryFee = vault.splitFees(fee);
+        vault.unlockVault();
         emit FlashLoan(address(receiver), token, amount, fee, treasuryFee);
         return true;
     }

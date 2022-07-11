@@ -42,6 +42,7 @@ contract Vault is
         _;
     }
 
+
     /**
      * @dev Only if vault is not initialized.
      **/
@@ -184,6 +185,23 @@ contract Vault is
      */
     function unpauseVault() external onlyModerator {
         require(isPaused == true, 'VAULT_ALREADY_RESUMED');
+        isPaused = false;
+    }
+
+
+    /**
+     * @dev Lock vault.
+     */
+    function lockVault() external onlyFlashLoanProvider {
+        require(isPaused == false, 'VAULT_ALREADY_LOCKED');
+        isPaused = true;
+    }
+
+    /**
+     * @dev Unlock vault.
+     */
+    function unlockVault() external onlyFlashLoanProvider {
+        require(isPaused == true, 'VAULT_ALREADY_UNLOCKED');
         isPaused = false;
     }
 
