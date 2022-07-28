@@ -178,7 +178,7 @@ describe('Vault', async () => {
     // Expect vault to have 0 USDC
     expect((await usdcToken.balanceOf(vault.address)).toString()).to.equal('0');
 
-    await vault.provideLiquidity(DEPOSIT_VALUE);
+    await vault.provideLiquidity(DEPOSIT_VALUE, 0);
 
     // Expect vault to have 50 USDC
     expect((await usdcToken.balanceOf(vault.address)).toString()).to.equal(DEPOSIT_VALUE);
@@ -188,7 +188,7 @@ describe('Vault', async () => {
   });
 
   it('Should revert if you provide 0 Liquidity', async () => {
-    expect(vault.provideLiquidity(0)).to.be.revertedWith('CANNOT_STAKE_ZERO_TOKENS');
+    expect(vault.provideLiquidity(0, 0)).to.be.revertedWith('CANNOT_STAKE_ZERO_TOKENS');
   });
 
   it('Last deposit block number should be different from zero', async () => {
@@ -270,7 +270,7 @@ describe('Vault', async () => {
 
     await usdcToken.connect(owner).transfer(addr1.address, tokenDeposited);
     await usdcToken.connect(addr1).approve(vault.address, tokenDeposited);
-    await vault.connect(addr1).provideLiquidity(tokenDeposited);
+    await vault.connect(addr1).provideLiquidity(tokenDeposited, 0);
 
     const shouldReceiveBalance = `${parseInt(
       tokenDepositedBn.multipliedBy(ratioDecimals).div(ratio).toString(),
@@ -293,6 +293,21 @@ describe('Vault', async () => {
     expect((await vault.balanceOf(addr1.address)).toString()).to.equal(
       eUsdcTokenBalanceBn.minus(withdrawBalanceBn).toString()
     );
+  });
+
+  it ('should fail if sandwitched', async () => {
+    const eUsdcAddr = vault.address;
+    const eUsdcToken = await ethers.getContractAt('ERC20EToken', eUsdcAddr);
+    const tokenDepositedBn = new BigNumber(90).multipliedBy(usdcTokenBnDecimals);
+    const tokenDeposited = tokenDepositedBn.toString();
+
+    const ratio = (await vault.getRatioForOneEToken()).toString();
+    let minOutput = await vault.getAmountOutputForExactInput(tokenDeposited);
+    await usdcToken.connect(owner).transfer(addr1.address, tokenDeposited);
+    await usdcToken.connect(owner).transfer(vault.address, tokenDeposited);
+    await usdcToken.connect(addr1).approve(vault.address, tokenDeposited);
+    await expect(vault.connect(addr1).provideLiquidity(tokenDeposited, minOutput))
+      .to.be.revertedWith("Insufficient Output");
   });
 
   it('Should have staking balance still', async () => {
@@ -402,13 +417,13 @@ describe('Vault', async () => {
 
   it('Provide liquidity function should revert if the vault is paused', async () => {
     await vault.pauseVault();
-    await expect(vault.provideLiquidity(DEPOSIT_VALUE)).to.be.revertedWith('ONLY_NOT_PAUSED');
+    await expect(vault.provideLiquidity(DEPOSIT_VALUE, 0)).to.be.revertedWith('ONLY_NOT_PAUSED');
     await vault.unpauseVault();
   });
 
   it('Provide liquidity function should revert if the amount is 0', async () => {
-    await vault.provideLiquidity(DEPOSIT_VALUE);
-    await expect(vault.provideLiquidity(0)).to.be.revertedWith('CANNOT_STAKE_ZERO_TOKENS');
+    await vault.provideLiquidity(DEPOSIT_VALUE, 0);
+    await expect(vault.provideLiquidity(0, 0)).to.be.revertedWith('CANNOT_STAKE_ZERO_TOKENS');
   });
 
   it('Initialize function should revert if the vault was already initialized', async () => {
