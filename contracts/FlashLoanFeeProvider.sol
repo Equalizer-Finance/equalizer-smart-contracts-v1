@@ -24,6 +24,7 @@ contract FlashLoanFeeProvider is IFlashLoanFeeProvider, Moderable {
         require(_flashFeePercentage <= 100, 'FEE_PERCENTAGE_WRONG_VALUE');
         flashFeePercentage = _flashFeePercentage;
         flashFeeAmountDivider = _flashFeeAmountDivider;
+        require (_calculateFeeForAmount(1) <= 1, "FEE_EXCEED_100_PERCENT");
 
         emit SetFee(_flashFeePercentage, _flashFeeAmountDivider);
     }
@@ -51,6 +52,11 @@ contract FlashLoanFeeProvider is IFlashLoanFeeProvider, Moderable {
      * @return flashFee calculated.
      */
     function calculateFeeForAmount(uint256 amount) external view returns (uint256) {
+        return _calculateFeeForAmount(amount);
+    }
+
+
+    function _calculateFeeForAmount(uint256 amount) internal view returns (uint256) {
         return (amount * flashFeePercentage) / flashFeeAmountDivider;
     }
 }

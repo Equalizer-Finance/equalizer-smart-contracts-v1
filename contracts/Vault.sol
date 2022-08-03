@@ -30,7 +30,7 @@ contract Vault is
     bool public isPaused = true;
     bool public isInitialized = false;
 
-    address public factory;
+    address public immutable factory;
 
     mapping(address => uint256) public lastDepositBlockNr;
 
@@ -111,6 +111,7 @@ contract Vault is
      */
     function setMaxCapacity(uint256 _maxCapacity) external onlyModerator {
         maxCapacity = _maxCapacity;
+        emit SetMaxCapacity(msg.sender, _maxCapacity);
     }
 
     /**
@@ -119,6 +120,7 @@ contract Vault is
      */
     function setMinAmountForFlash(uint256 _minAmountForFlash) external onlyModerator {
         minAmountForFlash = _minAmountForFlash;
+        emit SetMinAmountForFlash(msg.sender, _minAmountForFlash);
     }
 
     /**
@@ -189,6 +191,7 @@ contract Vault is
     function pauseVault() external onlyModerator {
         require(isPaused == false, 'VAULT_ALREADY_PAUSED');
         isPaused = true;
+        emit VaultPaused(msg.sender);
     }
 
     /**
@@ -197,6 +200,7 @@ contract Vault is
     function unpauseVault() external onlyModerator {
         require(isPaused == true, 'VAULT_ALREADY_RESUMED');
         isPaused = false;
+        emit VaultResumed(msg.sender);
     }
 
 
@@ -251,5 +255,6 @@ contract Vault is
     {
         treasuryAmount = getTreasuryAmountToSend(fee);
         require(stakedToken.transfer(treasuryAddress, treasuryAmount), 'TRANSFER_SPLIT_FAIL');
+        emit SplitFees(treasuryAddress, treasuryAmount);
     }
 }

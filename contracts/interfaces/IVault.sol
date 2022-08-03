@@ -25,6 +25,39 @@ interface IVault {
     event Withdraw(address indexed sender, uint256 amount, uint256 stakedTokensToTransfer);
 
     /**
+     * @dev Emitted on setMaxCapacity.
+     * @param moderator address
+     * @param amount of max capacity
+     **/
+    event SetMaxCapacity(address moderator, uint256 amount);
+
+    /**
+     * @dev Emitted on setMinAmountForFlash.
+     * @param moderator address
+     * @param amount for min flash loan
+     **/
+    event SetMinAmountForFlash(address moderator, uint256 amount);
+
+     /**
+     * @dev Emitted on pauseVault.
+     * @param moderator address
+     **/
+    event VaultPaused(address moderator);
+
+     /**
+     * @dev Emitted on unpauseVault.
+     * @param moderator address
+     **/
+    event VaultResumed(address moderator);
+
+    /**
+     * @dev Emitted on unpauseVault.
+     * @param treasuryAddress address
+     * @param amount uint256
+     **/
+    event SplitFees(address treasuryAddress, uint256 amount);
+
+    /**
      * @dev Emitted on initialize.
      * @param treasuryAddress address of treasury where part of flash loan fee is sent.
      * @param flashLoanProvider provider of flash loans.
@@ -35,4 +68,6 @@ interface IVault {
         address flashLoanProvider,
         uint256 maxCapacity
     ) external;
+
+
 }

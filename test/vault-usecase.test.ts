@@ -366,6 +366,13 @@ describe('Vault', async () => {
     );
   });
 
+  it('Should fail if percentage > 100%', async () => {
+    await expect(vault.setFee(FLASH_FEE_PERCENTAGE_BN.plus(10).toString(), 1)).to.be.revertedWith(
+      "FEE_EXCEED_100_PERCENT"
+    );
+
+  });
+
   it('Should modify treasury fee percentage as moderator', async () => {
     await vault.setTreasuryFeePercentage(25);
 
