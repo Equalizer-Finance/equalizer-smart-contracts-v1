@@ -154,7 +154,7 @@ describe('FlashLoanProvider', async () => {
       usdcToken.address,
       flAmount,
       ethers.utils.randomBytes(3)
-    )).to.be.revertedWith('ONLY_NOT_PAUSED');
+    )).to.be.revertedWith('ONGOING_FLASH_LOAN');
   })
 
 

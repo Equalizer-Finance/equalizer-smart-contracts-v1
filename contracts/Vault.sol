@@ -28,6 +28,7 @@ contract Vault is
     uint256 public maxCapacity = 0;
 
     bool public isPaused = true;
+    bool public ongoingFlashLoan = false;
     bool public isInitialized = false;
 
     address public immutable factory;
@@ -39,6 +40,11 @@ contract Vault is
      **/
     modifier onlyNotPaused {
         require(isPaused == false, 'ONLY_NOT_PAUSED');
+        _;
+    }
+
+    modifier noOngoingFlashLoan {
+        require (ongoingFlashLoan == false, 'ONGOING_FLASH_LOAN');
         _;
     }
 
@@ -135,7 +141,7 @@ contract Vault is
      * @dev Provide liquidity to Vault.
      * @param amount The amount of liquidity to be deposited.
      */
-    function provideLiquidity(uint256 amount, uint256 minOutputAmount) external onlyNotPaused nonReentrant {
+    function provideLiquidity(uint256 amount, uint256 minOutputAmount) external onlyNotPaused noOngoingFlashLoan nonReentrant {
         require(amount > 0, 'CANNOT_STAKE_ZERO_TOKENS');
         require(amount + totalAmountDeposited <= maxCapacity, 'AMOUNT_IS_BIGGER_THAN_CAPACITY');
 
@@ -208,16 +214,16 @@ contract Vault is
      * @dev Lock vault.
      */
     function lockVault() external onlyFlashLoanProvider {
-        require(isPaused == false, 'VAULT_ALREADY_LOCKED');
-        isPaused = true;
+        require(ongoingFlashLoan == false, 'VAULT_ALREADY_LOCKED');
+        ongoingFlashLoan = true;
     }
 
     /**
      * @dev Unlock vault.
      */
     function unlockVault() external onlyFlashLoanProvider {
-        require(isPaused == true, 'VAULT_ALREADY_UNLOCKED');
-        isPaused = false;
+        require(ongoingFlashLoan == true, 'VAULT_ALREADY_UNLOCKED');
+        ongoingFlashLoan = false;
     }
 
     /**
