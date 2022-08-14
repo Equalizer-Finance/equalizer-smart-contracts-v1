@@ -22,10 +22,9 @@ contract FlashLoanFeeProvider is IFlashLoanFeeProvider, Moderable {
     {
         require(_flashFeeAmountDivider > 0, 'AMOUNT_DIVIDER_CANNOT_BE_ZERO');
         require(_flashFeePercentage <= 100, 'FEE_PERCENTAGE_WRONG_VALUE');
+        require(_flashFeePercentage <= _flashFeeAmountDivider, "FEE_EXCEED_100_PERCENT");
         flashFeePercentage = _flashFeePercentage;
         flashFeeAmountDivider = _flashFeeAmountDivider;
-        require (_calculateFeeForAmount(1) <= 1, "FEE_EXCEED_100_PERCENT");
-
         emit SetFee(_flashFeePercentage, _flashFeeAmountDivider);
     }
 
