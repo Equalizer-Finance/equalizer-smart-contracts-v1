@@ -115,7 +115,7 @@ describe('FlashLoanProvider', async () => {
 
   it('Should revert if amount to small', async () => {
     await usdcToken.approve(vault.address, ethers.constants.MaxUint256);
-    await vault.provideLiquidity(DEPOSIT_VALUE);
+    await vault.provideLiquidity(DEPOSIT_VALUE, 0);
 
     expect(
       flashLoanProvider.flashLoan(
@@ -143,7 +143,7 @@ describe('FlashLoanProvider', async () => {
 
   it ('should fail to exploit the vault', async () => {
     await usdcToken.approve(vault.address, ethers.constants.MaxUint256);
-    await vault.provideLiquidity(DEPOSIT_VALUE);
+    await vault.provideLiquidity(DEPOSIT_VALUE, 0);
     let maxLoan = await flashLoanProvider.maxFlashLoan(usdcToken.address);
     let flAmount = maxLoan * 9 / 10;
     await usdcToken.transfer(flashBorrowerExploiter.address, maxLoan);
@@ -154,7 +154,7 @@ describe('FlashLoanProvider', async () => {
       usdcToken.address,
       flAmount,
       ethers.utils.randomBytes(3)
-    )).to.be.revertedWith('ONLY_NOT_PAUSED');
+    )).to.be.revertedWith('ONGOING_FLASH_LOAN');
   })
 
 

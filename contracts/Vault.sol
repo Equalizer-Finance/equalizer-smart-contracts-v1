@@ -28,9 +28,10 @@ contract Vault is
     uint256 public maxCapacity = 0;
 
     bool public isPaused = true;
+    bool public ongoingFlashLoan = false;
     bool public isInitialized = false;
 
-    address public factory;
+    address public immutable factory;
 
     mapping(address => uint256) public lastDepositBlockNr;
 
@@ -39,6 +40,11 @@ contract Vault is
      **/
     modifier onlyNotPaused {
         require(isPaused == false, 'ONLY_NOT_PAUSED');
+        _;
+    }
+
+    modifier noOngoingFlashLoan {
+        require (ongoingFlashLoan == false, 'ONGOING_FLASH_LOAN');
         _;
     }
 
@@ -96,11 +102,22 @@ contract Vault is
     }
 
     /**
+     * @dev Getter get an output amount for exact input.
+     * @return receivedETokens number of LP tokens for an exact input
+     */
+
+    function getAmountOutputForExactInput(uint256 amount) external view virtual returns (uint256 receivedETokens) {
+        require(amount > 0, 'CANNOT_STAKE_ZERO_TOKENS');
+        receivedETokens = getNrOfETokensToMint(amount);
+    }
+
+    /**
      * @dev Setter for max capacity.
      * @param _maxCapacity new value to be set.
      */
     function setMaxCapacity(uint256 _maxCapacity) external onlyModerator {
         maxCapacity = _maxCapacity;
+        emit SetMaxCapacity(msg.sender, _maxCapacity);
     }
 
     /**
@@ -109,6 +126,7 @@ contract Vault is
      */
     function setMinAmountForFlash(uint256 _minAmountForFlash) external onlyModerator {
         minAmountForFlash = _minAmountForFlash;
+        emit SetMinAmountForFlash(msg.sender, _minAmountForFlash);
     }
 
     /**
@@ -123,11 +141,12 @@ contract Vault is
      * @dev Provide liquidity to Vault.
      * @param amount The amount of liquidity to be deposited.
      */
-    function provideLiquidity(uint256 amount) external onlyNotPaused nonReentrant {
+    function provideLiquidity(uint256 amount, uint256 minOutputAmount) external onlyNotPaused noOngoingFlashLoan nonReentrant {
         require(amount > 0, 'CANNOT_STAKE_ZERO_TOKENS');
         require(amount + totalAmountDeposited <= maxCapacity, 'AMOUNT_IS_BIGGER_THAN_CAPACITY');
 
         uint256 receivedETokens = getNrOfETokensToMint(amount);
+        require (receivedETokens >= minOutputAmount, "Insufficient Output");
 
         totalAmountDeposited = amount + totalAmountDeposited;
 
@@ -178,6 +197,7 @@ contract Vault is
     function pauseVault() external onlyModerator {
         require(isPaused == false, 'VAULT_ALREADY_PAUSED');
         isPaused = true;
+        emit VaultPaused(msg.sender);
     }
 
     /**
@@ -186,6 +206,7 @@ contract Vault is
     function unpauseVault() external onlyModerator {
         require(isPaused == true, 'VAULT_ALREADY_RESUMED');
         isPaused = false;
+        emit VaultResumed(msg.sender);
     }
 
 
@@ -193,16 +214,16 @@ contract Vault is
      * @dev Lock vault.
      */
     function lockVault() external onlyFlashLoanProvider {
-        require(isPaused == false, 'VAULT_ALREADY_LOCKED');
-        isPaused = true;
+        require(ongoingFlashLoan == false, 'VAULT_ALREADY_LOCKED');
+        ongoingFlashLoan = true;
     }
 
     /**
      * @dev Unlock vault.
      */
     function unlockVault() external onlyFlashLoanProvider {
-        require(isPaused == true, 'VAULT_ALREADY_UNLOCKED');
-        isPaused = false;
+        require(ongoingFlashLoan == true, 'VAULT_ALREADY_UNLOCKED');
+        ongoingFlashLoan = false;
     }
 
     /**
@@ -240,5 +261,6 @@ contract Vault is
     {
         treasuryAmount = getTreasuryAmountToSend(fee);
         require(stakedToken.transfer(treasuryAddress, treasuryAmount), 'TRANSFER_SPLIT_FAIL');
+        emit SplitFees(treasuryAddress, treasuryAmount);
     }
 }
